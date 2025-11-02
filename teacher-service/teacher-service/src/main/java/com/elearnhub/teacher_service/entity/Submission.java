@@ -7,35 +7,46 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "submission")
 public class Submission {
-    @Id
+	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @NotNull(message = "Assignment ID cannot be null")
-    private Long assignmentId;
-
-    @NotNull(message = "Student ID cannot be null")
-    private Long studentId;
-
-    private String content; // Submission content (text, file path, etc.)
-
-    private String filePath; // If submission is a file
-
+    
+    @ManyToOne
+    @JoinColumn(name = "assignment_id", nullable = false)
+    private Assignment assignment;
+    
+    @ManyToOne
+    @JoinColumn(name = "student_id", nullable = false)
+    private User student;  // User with STUDENT role
+    
+    private String content;
+    private String filePath;
     private LocalDateTime submittedAt;
+    private Double grade;
+    private String feedback;
+    
+    
 
     // Constructors
     public Submission() {
     }
 
-    public Submission(Long assignmentId, Long studentId, String content, String filePath) {
-        this.assignmentId = assignmentId;
-        this.studentId = studentId;
-        this.content = content;
-        this.filePath = filePath;
-        this.submittedAt = LocalDateTime.now();
-    }
+    
 
-    // Getters and setters
+    public Submission(Long id, Assignment assignment, User student, String content, String filePath,
+			LocalDateTime submittedAt, Double grade, String feedback) {
+		super();
+		this.id = id;
+		this.assignment = assignment;
+		this.student = student;
+		this.content = content;
+		this.filePath = filePath;
+		this.submittedAt = submittedAt;
+		this.grade = grade;
+		this.feedback = feedback;
+	}
+
+	// Getters and setters
     public Long getId() {
         return id;
     }
@@ -44,21 +55,7 @@ public class Submission {
         this.id = id;
     }
 
-    public Long getAssignmentId() {
-        return assignmentId;
-    }
-
-    public void setAssignmentId(Long assignmentId) {
-        this.assignmentId = assignmentId;
-    }
-
-    public Long getStudentId() {
-        return studentId;
-    }
-
-    public void setStudentId(Long studentId) {
-        this.studentId = studentId;
-    }
+  
 
     public String getContent() {
         return content;
@@ -83,5 +80,55 @@ public class Submission {
     public void setSubmittedAt(LocalDateTime submittedAt) {
         this.submittedAt = submittedAt;
     }
+
+
+
+	public Assignment getAssignment() {
+		return assignment;
+	}
+
+
+
+	public void setAssignment(Assignment assignment) {
+		this.assignment = assignment;
+	}
+
+
+
+	public User getStudent() {
+		return student;
+	}
+
+
+
+	public void setStudent(User student) {
+		this.student = student;
+	}
+
+
+
+	public Double getGrade() {
+		return grade;
+	}
+
+
+
+	public void setGrade(Double grade) {
+		this.grade = grade;
+	}
+
+
+
+	public String getFeedback() {
+		return feedback;
+	}
+
+
+
+	public void setFeedback(String feedback) {
+		this.feedback = feedback;
+	}
+    
+    
 }
 

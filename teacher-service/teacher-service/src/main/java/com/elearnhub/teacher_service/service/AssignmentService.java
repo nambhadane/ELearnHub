@@ -3,11 +3,9 @@ package com.elearnhub.teacher_service.service;
 import com.elearnhub.teacher_service.dto.AssignmentDTO;
 import com.elearnhub.teacher_service.dto.SubmissionDTO;
 import com.elearnhub.teacher_service.entity.Assignment;
-import com.elearnhub.teacher_service.entity.Grade;
 import com.elearnhub.teacher_service.entity.Submission;
 import com.elearnhub.teacher_service.entity.User;
 import com.elearnhub.teacher_service.repository.AssignmentRepository;
-import com.elearnhub.teacher_service.repository.GradeRepository;
 import com.elearnhub.teacher_service.repository.SubmissionRepository;
 import com.elearnhub.teacher_service.service.UserService;
 import jakarta.transaction.Transactional;
@@ -28,9 +26,6 @@ public class AssignmentService {
 
     @Autowired
     private SubmissionRepository submissionRepository;
-
-    @Autowired
-    private GradeRepository gradeRepository;
 
     @Autowired
     private UserService userService;
@@ -67,13 +62,24 @@ public class AssignmentService {
         assignmentRepository.deleteById(id);
     }
 
+    // ✅ FIXED: saveSubmission - Submission entity uses relationship objects
     public SubmissionDTO saveSubmission(SubmissionDTO submissionDTO) {
+        // Get Assignment entity
+        Assignment assignment = assignmentRepository.findById(submissionDTO.getAssignmentId())
+                .orElseThrow(() -> new RuntimeException("Assignment not found with id: " + submissionDTO.getAssignmentId()));
+        
+        // Get User entity (student)
+        User student = userService.getUserById(submissionDTO.getStudentId())
+                .orElseThrow(() -> new RuntimeException("Student not found with id: " + submissionDTO.getStudentId()));
+
         Submission submission = new Submission();
-        submission.setAssignmentId(submissionDTO.getAssignmentId());
-        submission.setStudentId(submissionDTO.getStudentId());
+        // ✅ FIXED: Submission entity uses relationship objects
+        submission.setAssignment(assignment);  // ✅ Set Assignment object
+        submission.setStudent(student);         // ✅ Set User object
         submission.setContent(submissionDTO.getContent());
         submission.setFilePath(submissionDTO.getFilePath());
         submission.setSubmittedAt(LocalDateTime.now());
+        // Grade and feedback are null initially (teacher will grade later)
 
         Submission savedSubmission = submissionRepository.save(submission);
         return convertSubmissionToDTO(savedSubmission);
@@ -86,66 +92,51 @@ public class AssignmentService {
                 .collect(Collectors.toList());
     }
 
+    // ✅ FIXED: gradeSubmission - Set grade/feedback directly on Submission entity
     public SubmissionDTO gradeSubmission(Long submissionId, Double score, String feedback) {
         // Get submission
         Submission submission = submissionRepository.findById(submissionId)
                 .orElseThrow(() -> new RuntimeException("Submission not found with id: " + submissionId));
 
-        // Check if grade already exists
-        Optional<Grade> existingGradeOpt = gradeRepository.findBySubmissionId(submissionId);
-        Grade grade;
-
-        if (existingGradeOpt.isPresent()) {
-            // Update existing grade
-            grade = existingGradeOpt.get();
-            grade.setScore(score);
-            grade.setFeedback(feedback);
-        } else {
-            // Create new grade
-            grade = new Grade();
-            grade.setSubmissionId(submissionId);
-            grade.setScore(score);
-            grade.setFeedback(feedback);
-        }
-
-        gradeRepository.save(grade);
+        // ✅ FIXED: Set grade and feedback directly on Submission entity
+        submission.setGrade(score);
+        submission.setFeedback(feedback);
+        
+        // Save updated submission
+        submissionRepository.save(submission);
 
         // Return updated submission DTO with grade
-        SubmissionDTO submissionDTO = convertSubmissionToDTO(submission);
-        submissionDTO.setGrade(grade.getScore());
-        submissionDTO.setFeedback(grade.getFeedback());
-
-        return submissionDTO;
+        return convertSubmissionToDTO(submission);
     }
 
+    // ✅ FIXED: Convert Submission to SubmissionDTO - matches your actual entity structure
     private SubmissionDTO convertSubmissionToDTO(Submission submission) {
         SubmissionDTO dto = new SubmissionDTO();
         dto.setId(submission.getId());
-        dto.setAssignmentId(submission.getAssignmentId());
-        dto.setStudentId(submission.getStudentId());
+        
+        // ✅ FIXED: Get IDs from relationship objects
+        if (submission.getAssignment() != null) {
+            dto.setAssignmentId(submission.getAssignment().getId());
+        }
+        
+        if (submission.getStudent() != null) {
+            dto.setStudentId(submission.getStudent().getId());
+            
+            // Get student name from User object
+            String studentName = submission.getStudent().getName() != null && 
+                    !submission.getStudent().getName().trim().isEmpty()
+                    ? submission.getStudent().getName()
+                    : submission.getStudent().getUsername();
+            dto.setStudentName(studentName);
+        }
+        
         dto.setContent(submission.getContent());
         dto.setFilePath(submission.getFilePath());
         dto.setSubmittedAt(submission.getSubmittedAt());
-
-        // Get student name
-        try {
-            Optional<User> studentOpt = userService.getUserById(submission.getStudentId());
-            if (studentOpt.isPresent()) {
-                User student = studentOpt.get();
-                dto.setStudentName(student.getUsername() != null ? student.getUsername() : student.getUsername());
-            }
-        } catch (Exception e) {
-            // If we can't get student name, just use ID
-            dto.setStudentName("Student #" + submission.getStudentId());
-        }
-
-        // Get grade if exists
-        Optional<Grade> gradeOpt = gradeRepository.findBySubmissionId(submission.getId());
-        if (gradeOpt.isPresent()) {
-            Grade grade = gradeOpt.get();
-            dto.setGrade(grade.getScore());
-            dto.setFeedback(grade.getFeedback());
-        }
+        
+        // ✅ FIXED: Grade and feedback exist directly in Submission entity
+        dto.setGrade(submission.getGrade());
+        dto.setFeedback(submission.getFeedback());
 
         return dto;
     }
@@ -159,6 +150,22 @@ public class AssignmentService {
         dto.setMaxGrade(assignment.getMaxGrade());
         dto.setCourseId(assignment.getCourseId());
         return dto;
+    }
+    
+    // ✅ FIXED: Get submission by student and assignment
+    public SubmissionDTO getSubmissionByStudentAndAssignment(Long studentId, Long assignmentId) {
+        // ✅ FIXED: Repository method is findByAssignmentIdAndStudentId (order matters!)
+        Optional<Submission> submissionOpt = submissionRepository.findByAssignmentIdAndStudentId(
+                assignmentId, studentId);
+
+        if (submissionOpt.isEmpty()) {
+            return null; // No submission found
+        }
+
+        Submission submission = submissionOpt.get();
+        
+        // ✅ Use the existing convertSubmissionToDTO method (already fixed above)
+        return convertSubmissionToDTO(submission);
     }
 }
 

@@ -145,14 +145,14 @@
     </dependency>
 
     <!-- Local project dependency -->
-    <dependency>
+<!--    <dependency>
       <groupId>com.skillShowcase</groupId>
       <artifactId>SkillShowCasePlatform</artifactId>
       <version>0.0.1-SNAPSHOT</version>
-    </dependency>
+    </dependency>-->
 
     <!-- 🧩 Eureka Server -->
-    <dependency>
+   <!-- <dependency>
       <groupId>org.springframework.cloud</groupId>
       <artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
     </dependency>
@@ -160,7 +160,7 @@
     	<groupId>com.example</groupId>
     	<artifactId>eureka-server</artifactId>
     	<version>0.0.1-SNAPSHOT</version>
-    </dependency>
+    </dependency>-->
     <dependency>
     	<groupId>com.elearnhub</groupId>
     	<artifactId>student-service</artifactId>

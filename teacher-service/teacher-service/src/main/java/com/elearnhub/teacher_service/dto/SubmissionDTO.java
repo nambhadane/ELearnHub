@@ -2,6 +2,8 @@ package com.elearnhub.teacher_service.dto;
 
 import java.time.LocalDateTime;
 
+import com.elearnhub.teacher_service.entity.Assignment;
+
 public class SubmissionDTO {
     private Long id;
     private Long assignmentId;
@@ -9,7 +11,9 @@ public class SubmissionDTO {
     private String studentName; // For display purposes
     private String content;
     private String filePath;
-    private LocalDateTime submittedAt;
+    private LocalDateTime submittedAt;  // ✅ This is LocalDateTime, not String
+
+    
     private Double grade; // Current grade if graded
     private String feedback; // Feedback if graded
 
@@ -44,8 +48,8 @@ public class SubmissionDTO {
         return assignmentId;
     }
 
-    public void setAssignmentId(Long assignmentId) {
-        this.assignmentId = assignmentId;
+    public void setAssignmentId(Long assignment) {
+        this.assignmentId = assignment;
     }
 
     public Long getStudentId() {

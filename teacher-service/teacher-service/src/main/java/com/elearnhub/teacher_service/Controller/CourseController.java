@@ -241,5 +241,152 @@ public class CourseController {
         response.put("students", course.getStudents() != null ? course.getStudents().size() : 0);
         return response;
     }
+    
+    // ✅ NEW: Add student to course
+    @PostMapping("/{courseId}/students/{studentId}")
+    @PreAuthorize("hasRole('TEACHER')")
+    public ResponseEntity<?> addStudentToCourse(
+            @PathVariable Long courseId,
+            @PathVariable Long studentId,
+            Authentication authentication) {
+        try {
+            // Get teacher from authentication
+            String username = authentication.getName();
+            User teacher = userService.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("Teacher not found"));
+
+            // Verify course exists and belongs to teacher
+            Course course = courseService.getCourseById(courseId)
+                    .orElseThrow(() -> new RuntimeException("Course not found"));
+
+            if (!course.getTeacherId().equals(teacher.getId())) {
+                Map<String, String> error = new HashMap<>();
+                error.put("message", "Unauthorized: You don't own this course");
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+            }
+
+            // Verify student exists
+            User student = userService.getUserById(studentId)
+                    .orElseThrow(() -> new RuntimeException("Student not found"));
+
+            // Verify student role
+            if (!"STUDENT".equals(student.getRole())) {
+                Map<String, String> error = new HashMap<>();
+                error.put("message", "User is not a student");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+            }
+
+            // Add student to course
+            courseService.addStudentToCourse(courseId, studentId);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Student added to course successfully");
+            response.put("courseId", courseId);
+            response.put("studentId", studentId);
+            response.put("studentName", student.getName() != null ? student.getName() : student.getUsername());
+
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("message", "Failed to add student: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
+    // ✅ NEW: Remove student from course
+    @DeleteMapping("/{courseId}/students/{studentId}")
+    @PreAuthorize("hasRole('TEACHER')")
+    public ResponseEntity<?> removeStudentFromCourse(
+            @PathVariable Long courseId,
+            @PathVariable Long studentId,
+            Authentication authentication) {
+        try {
+            // Get teacher from authentication
+            String username = authentication.getName();
+            User teacher = userService.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("Teacher not found"));
+
+            // Verify course exists and belongs to teacher
+            Course course = courseService.getCourseById(courseId)
+                    .orElseThrow(() -> new RuntimeException("Course not found"));
+
+            if (!course.getTeacherId().equals(teacher.getId())) {
+                Map<String, String> error = new HashMap<>();
+                error.put("message", "Unauthorized: You don't own this course");
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+            }
+
+            // Remove student from course
+            courseService.removeStudentFromCourse(courseId, studentId);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Student removed from course successfully");
+            response.put("courseId", courseId);
+            response.put("studentId", studentId);
+
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("message", "Failed to remove student: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
+    // ✅ NEW: Get all students in a course
+    @GetMapping("/{courseId}/students")
+    @PreAuthorize("hasRole('TEACHER')")
+    public ResponseEntity<?> getCourseStudents(
+            @PathVariable Long courseId,
+            Authentication authentication) {
+        try {
+            // Get teacher from authentication
+            String username = authentication.getName();
+            User teacher = userService.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("Teacher not found"));
+
+            // Verify course exists and belongs to teacher
+            Course course = courseService.getCourseById(courseId)
+                    .orElseThrow(() -> new RuntimeException("Course not found"));
+
+            if (!course.getTeacherId().equals(teacher.getId())) {
+                Map<String, String> error = new HashMap<>();
+                error.put("message", "Unauthorized: You don't own this course");
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+            }
+
+            // Get students enrolled in course
+            List<User> students = courseService.getCourseStudents(courseId);
+
+            // Convert to response format
+            List<Map<String, Object>> response = students.stream()
+                    .map(student -> {
+                        Map<String, Object> studentData = new HashMap<>();
+                        studentData.put("id", student.getId());
+                        studentData.put("username", student.getUsername());
+                        studentData.put("name", student.getName() != null ? student.getName() : student.getUsername());
+                        studentData.put("email", student.getEmail() != null ? student.getEmail() : "");
+                        return studentData;
+                    })
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("message", "Failed to fetch students: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
 }
 

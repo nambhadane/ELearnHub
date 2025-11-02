@@ -41,6 +41,7 @@ public class UserService implements UserDetailsService {
         return savedUser;
     }
 
+ // ✅ NEW (correct):
     public Optional<User> getUserById(Long id) {
         return userRepository.findById(id);
     }
