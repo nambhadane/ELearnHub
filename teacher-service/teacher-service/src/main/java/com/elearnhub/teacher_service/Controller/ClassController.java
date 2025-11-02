@@ -32,4 +32,17 @@ public class ClassController {
         List<ClassDTO> classes = classService.getClassesByTeacher(teacherId);
         return ResponseEntity.ok(classes);
     }
+    
+    @PostMapping("/{classId}/students")
+    @PreAuthorize("hasRole('TEACHER')")
+    public ResponseEntity<Void> addStudentToClass(@PathVariable Long classId, @RequestParam Long studentId) {
+        classService.addStudentToClass(classId, studentId);
+        return ResponseEntity.ok().build();
+    }
+    
+    @GetMapping("/student/{studentId}")
+    @PreAuthorize("hasRole('TEACHER')")
+    public ResponseEntity<?> getClassesForStudent(@PathVariable Long studentId) {
+        return ResponseEntity.ok(classService.getClassesForStudent(studentId));
+    }
 }

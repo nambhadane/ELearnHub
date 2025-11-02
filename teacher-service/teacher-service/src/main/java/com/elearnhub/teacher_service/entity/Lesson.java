@@ -21,48 +21,53 @@ public class Lesson {
     @NotNull(message = "File path cannot be null")
     private String filePath; // Store the file location (e.g., local path or S3 URL)
 
-    @NotNull(message = "Class ID cannot be null")
+    // ✅ CHANGED: Use Course instead of ClassEntity
+    @NotNull(message = "Course cannot be null")
     @ManyToOne
-    @JoinColumn(name = "class_id")
-    private ClassEntity classEntity;
+    @JoinColumn(name = "course_id") // Changed from class_id
+    private Course course; // Changed from ClassEntity classEntity
 
-    public Lesson(String title, String filePath, ClassEntity classEntity) {
-        this.title = title;
-        this.filePath = filePath;
-        this.classEntity = classEntity;
+    // Constructors
+    public Lesson() {
     }
 
-	public Long getId() {
-		return id;
-	}
+    public Lesson(String title, String filePath, Course course) {
+        this.title = title;
+        this.filePath = filePath;
+        this.course = course;
+    }
 
-	public void setId(Long id) {
-		this.id = id;
-	}
+    // Getters and setters
+    public Long getId() {
+        return id;
+    }
 
-	public String getTitle() {
-		return title;
-	}
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-	public void setTitle(String title) {
-		this.title = title;
-	}
+    public String getTitle() {
+        return title;
+    }
 
-	public String getFilePath() {
-		return filePath;
-	}
+    public void setTitle(String title) {
+        this.title = title;
+    }
 
-	public void setFilePath(String filePath) {
-		this.filePath = filePath;
-	}
+    public String getFilePath() {
+        return filePath;
+    }
 
-	public ClassEntity getClassEntity() {
-		return classEntity;
-	}
+    public void setFilePath(String filePath) {
+        this.filePath = filePath;
+    }
 
-	public void setClassEntity(ClassEntity classEntity) {
-		this.classEntity = classEntity;
-	}
-    
-    
+    public Course getCourse() {
+        return course;
+    }
+
+    public void setCourse(Course course) {
+        this.course = course;
+    }
 }
+

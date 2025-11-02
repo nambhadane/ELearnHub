@@ -1,125 +1,14 @@
 package com.elearnhub.teacher_service.service;
-//
-//import com.elearnhub.teacher_service.entity.Course;
-//import com.elearnhub.teacher_service.entity.User;
-//import com.elearnhub.teacher_service.repository.CourseRepository;
-//import org.springframework.beans.factory.annotation.Autowired;
-//import org.springframework.stereotype.Service;
-//
-//import java.util.List;
-//import java.util.Optional;
-//
-//@Service
-//public class CourseService {
-//    @Autowired
-//    private CourseRepository courseRepository;
-//
-//    public Course createCourse(Course course) {
-//        return courseRepository.save(course);
-//    }
-//
-//    public Optional<Course> getCourseById(Long id) {
-//        return courseRepository.findById(id);
-//    }
-//
-//    public List<Course> getCoursesByTeacher(Long teacherId) {
-//        return courseRepository.findByTeacherId(teacherId);
-//    }
-//
-//    public List<Course> getCoursesByStudent(Long studentId) {
-//        return courseRepository.findByStudentsId(studentId);
-//    }
-//
-//    public Course updateCourse(Long id, Course course) {
-//        Course existingCourse = courseRepository.findById(id)
-//            .orElseThrow(() -> new RuntimeException("Course not found with id: " + id));
-//        existingCourse.setName(course.getName());
-//        existingCourse.setDescription(course.getDescription());
-//        existingCourse.setTeacherId(course.getTeacherId());
-//        existingCourse.setStudents(course.getStudents());
-//        return courseRepository.save(existingCourse);
-//    }
-//
-//    public void deleteCourse(Long id) {
-//        courseRepository.deleteById(id);
-//    }
-//}
 
-
-
-//
-//import com.elearnhub.teacher_service.dto.CourseDTO;
-//import com.elearnhub.teacher_service.entity.Course;
-//import com.elearnhub.teacher_service.repository.CourseRepository;
-//import org.springframework.beans.factory.annotation.Autowired;
-//import org.springframework.stereotype.Service;
-//
-//import java.util.List;
-//import java.util.Optional;
-//import java.util.stream.Collectors;
-//
-//@Service
-//public class CourseService {
-//    @Autowired
-//    private CourseRepository courseRepository;
-//
-//    public Course createCourse(Course course) {
-//        return courseRepository.save(course);
-//    }
-//
-//    public List<CourseDTO> getAllCourses() {
-//        List<Course> courses = courseRepository.findAll();
-//        return courses.stream()
-//                .map(course -> new CourseDTO(
-//                        course.getId(),
-//                        course.getName(),
-//                        course.getDescription(),
-//                        course.getTeacherId()
-//                ))
-//                .collect(Collectors.toList());
-//    }
-//    
-//    
-//    public Optional<Course> getCourseById(Long id) {
-//        return courseRepository.findByIdWithStudents(id);
-//    }
-//
-//    public List<Course> getCoursesByTeacher(Long teacherId) {
-//        return courseRepository.findByTeacherId(teacherId);
-//    }
-//
-//    public List<Course> getCoursesByStudent(Long studentId) {
-//        return courseRepository.findByStudentsId(studentId);
-//    }
-//   
-//
-//    public Course updateCourse(Long id, Course course) {
-//        Course existingCourse = courseRepository.findByIdWithStudents(id)
-//            .orElseThrow(() -> new RuntimeException("Course not found with id: " + id));
-//        existingCourse.setName(course.getName());
-//        existingCourse.setDescription(course.getDescription());
-//        existingCourse.setTeacherId(course.getTeacherId());
-//        existingCourse.setStudents(course.getStudents());
-//        return courseRepository.save(existingCourse);
-//    }
-//
-//    public void deleteCourse(Long id) {
-//        courseRepository.deleteById(id);
-//    }
-//}
-
-
-
-import com.elearnhub.teacher_service.dto.CourseDTO;
 import com.elearnhub.teacher_service.entity.Course;
 import com.elearnhub.teacher_service.repository.CourseRepository;
-import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -128,30 +17,40 @@ public class CourseService {
     @Autowired
     private CourseRepository courseRepository;
 
-    public List<CourseDTO> getAllCourses() {
-        List<Course> courses = courseRepository.findAll();
-        return courses.stream()
-                .map(course -> new CourseDTO(
-                        course.getId(),
-                        course.getName(),
-                        course.getDescription(),
-                        course.getTeacherId()
-                ))
-                .collect(Collectors.toList());
-    }
-
-    public CourseDTO getCourseById(Long id) {
-        Optional<Course> course = courseRepository.findById(id);
-        return course.map(c -> new CourseDTO(
-                c.getId(),
-                c.getName(),
-                c.getDescription(),
-                c.getTeacherId()
-        )).orElse(null); // Return null or throw exception based on your design
-    }
-
     public Course createCourse(Course course) {
+        // Initialize students list if null to avoid NPE
+        if (course.getStudents() == null) {
+            course.setStudents(new ArrayList<>());
+        }
         return courseRepository.save(course);
+    }
+
+    // ✅ Updated: Use repository method that eagerly fetches students
+    public List<Course> getCoursesByTeacherId(Long teacherId) {
+        // This will eagerly fetch students collection, preventing lazy initialization error
+        List<Course> courses = courseRepository.findByTeacherId(teacherId);
+        
+        // Initialize students if null (defensive programming)
+        for (Course course : courses) {
+            if (course.getStudents() == null) {
+                course.setStudents(new ArrayList<>());
+            }
+        }
+        
+        return courses;
+    }
+
+    // ✅ Updated: Eagerly fetch students when getting by ID
+    public Optional<Course> getCourseById(Long id) {
+        return courseRepository.findById(id).map(course -> {
+            // Initialize students if null
+            if (course.getStudents() == null) {
+                course.setStudents(new ArrayList<>());
+            }
+            // Force initialization of students collection within transaction
+            course.getStudents().size(); // This triggers lazy loading within transaction
+            return course;
+        });
     }
 
     public Course updateCourse(Long id, Course course) {
@@ -161,12 +60,14 @@ public class CourseService {
             updatedCourse.setName(course.getName());
             updatedCourse.setDescription(course.getDescription());
             updatedCourse.setTeacherId(course.getTeacherId());
+            // Don't update students list here (that's handled separately)
             return courseRepository.save(updatedCourse);
         }
-        throw new RuntimeException("Course not found with id: " + id); // Handle appropriately
+        throw new RuntimeException("Course not found with id: " + id);
     }
 
     public void deleteCourse(Long id) {
         courseRepository.deleteById(id);
     }
 }
+

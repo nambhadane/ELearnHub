@@ -120,6 +120,8 @@ public class User implements UserDetails {
     @NotNull(message = "Username cannot be null")
     @Size(min = 3, max = 50, message = "Username must be between 3 and 50 characters")
     private String username;
+    
+    private String name;
 
     @NotNull(message = "Password cannot be null")
     @Size(min = 6, message = "Password must be at least 6 characters")
@@ -132,7 +134,10 @@ public class User implements UserDetails {
     @NotNull(message = "Role cannot be null")
     @Size(max = 20, message = "Role must not exceed 20 characters")
     private String role;
-
+    
+    @Column(name = "profile_picture")
+    private String profilePicture;
+    
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role));
@@ -143,7 +148,15 @@ public class User implements UserDetails {
         return true;
     }
 
-    @Override
+    public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	@Override
     public boolean isAccountNonLocked() {
         return true;
     }
@@ -172,6 +185,14 @@ public class User implements UserDetails {
 
 	public void setUsername(String username) {
 		this.username = username;
+	}
+
+	public String getProfilePicture() {
+		return profilePicture;
+	}
+
+	public void setProfilePicture(String profilePicture) {
+		this.profilePicture = profilePicture;
 	}
 
 	public String getPassword() {

@@ -1,17 +1,23 @@
 package com.elearnhub.teacher_service.repository;
 
 import com.elearnhub.teacher_service.entity.Course;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 
+@Repository
 public interface CourseRepository extends JpaRepository<Course, Long> {
+    
+    // ✅ Option 1: Using @EntityGraph to fetch students eagerly
+    @EntityGraph(attributePaths = "students")
     List<Course> findByTeacherId(Long teacherId);
-    List<Course> findByStudentsId(Long studentId);
-
-    @Query("SELECT c FROM Course c JOIN FETCH c.students WHERE c.id = :id")
-    Optional<Course> findByIdWithStudents(@Param("id") Long id);
+    
+    // ✅ Option 2: Using JOIN FETCH query (alternative approach)
+    @Query("SELECT DISTINCT c FROM Course c LEFT JOIN FETCH c.students WHERE c.teacherId = :teacherId")
+    List<Course> findByTeacherIdWithStudents(@Param("teacherId") Long teacherId);
 }
+

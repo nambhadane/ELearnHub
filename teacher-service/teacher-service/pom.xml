@@ -161,6 +161,11 @@
     	<artifactId>eureka-server</artifactId>
     	<version>0.0.1-SNAPSHOT</version>
     </dependency>
+    <dependency>
+    	<groupId>com.elearnhub</groupId>
+    	<artifactId>student-service</artifactId>
+    	<version>0.0.1-SNAPSHOT</version>
+    </dependency>
   </dependencies>
 
   <!-- Build Configuration -->

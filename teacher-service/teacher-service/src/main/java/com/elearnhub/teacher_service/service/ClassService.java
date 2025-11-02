@@ -46,4 +46,20 @@ public class ClassService {
                 ))
                 .collect(Collectors.toList());
     }
+    
+    public void addStudentToClass(Long classId, Long studentId) {
+        ClassEntity classEntity = classEntityRepository.findById(classId)
+                .orElseThrow(() -> new RuntimeException("Class not found"));
+        User student = userRepository.findById(studentId)
+                .orElseThrow(() -> new RuntimeException("Student not found"));
+        classEntity.addStudent(student);
+        classEntityRepository.save(classEntity);
+    }
+    
+    public List<ClassDTO> getClassesForStudent(Long studentId) {
+        return classEntityRepository.findAll().stream()
+                .filter(c -> c.getStudents().stream().anyMatch(s -> s.getId().equals(studentId)))
+                .map(c -> new ClassDTO(c.getId(), c.getName()))
+                .collect(Collectors.toList());
+    }
 }

@@ -6,9 +6,12 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Data
-@NoArgsConstructor // Ensures a no-arguments constructor
+@NoArgsConstructor
 public class ClassEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,10 +29,26 @@ public class ClassEntity {
     @JoinColumn(name = "course_id")
     private Course course;
 
+    @ManyToMany
+    @JoinTable(
+        name = "class_student",
+        joinColumns = @JoinColumn(name = "class_id"),
+        inverseJoinColumns = @JoinColumn(name = "student_id")
+    )
+    private List<User> students = new ArrayList<>();
+
     public ClassEntity(String name, User teacher, Course course) {
         this.name = name;
         this.teacher = teacher;
         this.course = course;
+    }
+
+    public void addStudent(User student) {
+        if (student.getRole().equals("STUDENT")) {
+            this.students.add(student);
+        } else {
+            throw new IllegalArgumentException("Only students can be added to classes");
+        }
     }
 
 	public Long getId() {
@@ -62,6 +81,14 @@ public class ClassEntity {
 
 	public void setCourse(Course course) {
 		this.course = course;
+	}
+
+	public List<User> getStudents() {
+		return students;
+	}
+
+	public void setStudents(List<User> students) {
+		this.students = students;
 	}
     
     
